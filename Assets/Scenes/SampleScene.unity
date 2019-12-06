@@ -1078,7 +1078,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1039a39617f32f74c801ccfb40e01291, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  centralBody: {fileID: 0}
+  centralBody: {fileID: 1106872578}
   R: 149597887000
   V: 29783
   angle: 0
@@ -1127,7 +1127,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   scaleD: 0.00000001
   scaleR: 0.000000001
-  scaleT: 86400
+  scaleT: 864000
   dt: 60
 --- !u!4 &917134006
 Transform:
@@ -1453,7 +1453,7 @@ MonoBehaviour:
   centralBody: {fileID: 859982535}
   R: 384403000
   V: 1023
-  angle: 0
+  angle: 23.5
 --- !u!114 &1068991752
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1593,7 +1593,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c463833dbd1245f4fbd72400c5cf3427, type: 2}
+  - {fileID: 2100000, guid: 2df8a01cdec6a864185acf728b933d02, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2619,3 +2619,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   chaseObject: {fileID: 1068991749}
+  referObject: {fileID: 859982535}

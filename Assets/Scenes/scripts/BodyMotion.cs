@@ -28,6 +28,11 @@ public class BodyMotion : MonoBehaviour
         double x = pos[0] * dS.scaleR;
         double y = pos[1] * dS.scaleR;
         double z = pos[2] * dS.scaleR;
+        if(cBM != null){
+            x += cBM.pos[0] * dS.scaleR;
+            y += cBM.pos[1] * dS.scaleR;
+            z += cBM.pos[2] * dS.scaleR;
+        }
         tF.position = new Vector3((float)x, (float)y, (float)z);
     }
 
@@ -50,14 +55,21 @@ public class BodyMotion : MonoBehaviour
 
     // once motion during dt, dt may less than dS.dt if
     void MoveOnce(double dt){
-        double[] a = Acceleration(pos, cBM.pos, cBM.bP.M);
+        double[] gravityPos = new double[3]{0, 0, 0};
+        double[] a = Acceleration(pos, gravityPos, cBM.bP.M);
+        // other gravities
+        /*
         for(int i = 0; i < others.Count; i++){
             BodyMotion bM = others[i].GetComponent<BodyMotion>();
-            double[] cur_a = Acceleration(pos, bM.pos, bM.bP.M);
+            gravityPos[0] = bM.pos[0] - cBM.pos[0];
+            gravityPos[1] = bM.pos[1] - cBM.pos[1];
+            gravityPos[2] = bM.pos[2] - cBM.pos[2];
+            double[] cur_a = Acceleration(pos, gravityPos, bM.bP.M);
             a[0] += cur_a[0];
             a[1] += cur_a[1];
             a[2] += cur_a[2];
         }
+        */
         // updata velocity
         vel[0] = vel[0] + a[0] * dt;
         vel[1] = vel[1] + a[1] * dt;
@@ -91,19 +103,20 @@ public class BodyMotion : MonoBehaviour
     // draw current trajectory array
     void DrawTrajectory(){
         int j = 0;
+        //Debug.Log("Draw Traj " + this.name + " count="+traj.Count);
         line.positionCount = traj.Count;
         for(int i = lastTrajIndex; i >= 0; i--, j++){
-            float x = (float)(traj[i][0] * dS.scaleR);
-            float y = (float)(traj[i][1] * dS.scaleR);
-            float z = (float)(traj[i][2] * dS.scaleR);
+            float x = (float)((cBM.pos[0] + traj[i][0]) * dS.scaleR);
+            float y = (float)((cBM.pos[1] + traj[i][1]) * dS.scaleR);
+            float z = (float)((cBM.pos[2] + traj[i][2]) * dS.scaleR);
             line.SetPosition(j, new Vector3(x, y, z));
         }
         // process loop part
         if(j < traj.Count){
             for(int i = traj.Count - 1; i > lastTrajIndex; i--, j++){
-                float x = (float)(traj[i][0] * dS.scaleR);
-                float y = (float)(traj[i][1] * dS.scaleR);
-                float z = (float)(traj[i][2] * dS.scaleR);
+                float x = (float)((cBM.pos[0] + traj[i][0]) * dS.scaleR);
+                float y = (float)((cBM.pos[1] + traj[i][1]) * dS.scaleR);
+                float z = (float)((cBM.pos[2] + traj[i][2]) * dS.scaleR);
                 line.SetPosition(j, new Vector3(x, y, z));
             }
         }
@@ -128,11 +141,13 @@ public class BodyMotion : MonoBehaviour
         // set the initial position of body, 
         // initial position is relative to the central body
         pos[0] = bO.R;
+        /*
         if(cBM != null){
             pos[0] += cBM.pos[0];
             pos[1] += cBM.pos[1];
             pos[2] += cBM.pos[2];
         }
+        */
         SetPosition();
         Debug.Log(this.name + " size=" + tF.localScale + " pos=" + tF.position);
 
@@ -141,11 +156,13 @@ public class BodyMotion : MonoBehaviour
         double pi = Math.PI;
         vel[1] = Math.Sin(pi * bO.angle / 180) * bO.V;
         vel[2] = Math.Cos(pi * bO.angle / 180) * bO.V;
+        /*
         if(cBM != null){
             vel[0] += cBM.vel[0];
             vel[1] += cBM.vel[1];
             vel[2] += cBM.vel[2];
         }
+        */
         t0 = Time.time;
 
         // init trajectory and line drawing setting
