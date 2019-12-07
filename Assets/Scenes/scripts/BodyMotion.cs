@@ -10,8 +10,12 @@ public class BodyMotion : MonoBehaviour
     double t0;
     double t1;
 
+    public bool orbitKeep = true;   // dt > 0 will pull the moon to the central body
+    double minZ;
+
     public DisplaySetting dS;
     public BodyProperty bP;
+    BodyOrbit bO;
     Transform tF;
     BodyMotion cBM = null;  // central body motion
     public List<GameObject> others = new List<GameObject>();
@@ -123,6 +127,45 @@ public class BodyMotion : MonoBehaviour
     }
 
 
+    // init the position and velocity
+    void InitOrbit(){
+    // set the initial position of body, 
+        // initial position is relative to the central body
+        pos[0] = bO.R;
+        pos[1] = 0;
+        pos[2] = 0;
+        SetPosition(); 
+        // set the initial velocity of revolution
+        // initial velocity if relative to the central body
+        double pi = Math.PI;
+        vel[0] = 0;
+        vel[1] = Math.Sin(pi * bO.angle / 180) * bO.V;
+        vel[2] = Math.Cos(pi * bO.angle / 180) * bO.V;
+    }
+
+
+    // void adjust the orbit position and veloctiy
+    // because dt > 0 will pull the moon to the central body
+    void AdjustOrbit(){
+        if((pos[0] > 0) && (pos[2] <= 0)){
+            minZ = Math.Min(minZ, -pos[2]);
+        }
+        else{
+            // neareast postion to initial position
+            if(minZ < bO.R / 2){
+                double curR = Math.Sqrt(Math.Pow(pos[0], 2) + Math.Pow(pos[1], 2) + Math.Pow(pos[2], 2));
+                double delta = Math.Abs((curR - bO.R) / bO.R);
+                // if orbit R delta > 5%, adjust orbit
+                if(delta > 0.05){
+                    Debug.Log("Keep Orbit [" + this.name + "] before:" + tF.position);
+                    InitOrbit();
+                    Debug.Log("Keep Orbit [" + this.name + "] after:" + tF.position);
+                }
+                minZ = bO.R;
+            }
+        }
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -130,40 +173,33 @@ public class BodyMotion : MonoBehaviour
         tF = GetComponent<Transform>();
         dS = GameObject.Find("Setting").GetComponent<DisplaySetting>();
         bP = GetComponent<BodyProperty>();
-        BodyOrbit bO = GetComponent<BodyOrbit>();
+        bO = GetComponent<BodyOrbit>();
         if(bO.centralBody != null) 
             cBM = bO.centralBody.GetComponent<BodyMotion>();
 
         // set display size of body
         float d = (float)(bP.D * dS.scaleD);
         tF.localScale = new Vector3(d, d, d); 
+        MeshRenderer mr = GetComponent<MeshRenderer>();
+        mr.material.color = Color.white;
 
+        InitOrbit();
+        
+        /*
         // set the initial position of body, 
         // initial position is relative to the central body
         pos[0] = bO.R;
-        /*
-        if(cBM != null){
-            pos[0] += cBM.pos[0];
-            pos[1] += cBM.pos[1];
-            pos[2] += cBM.pos[2];
-        }
-        */
         SetPosition();
-        Debug.Log(this.name + " size=" + tF.localScale + " pos=" + tF.position);
-
+        
         // set the initial velocity of revolution
         // initial velocity if relative to the central body
         double pi = Math.PI;
         vel[1] = Math.Sin(pi * bO.angle / 180) * bO.V;
         vel[2] = Math.Cos(pi * bO.angle / 180) * bO.V;
-        /*
-        if(cBM != null){
-            vel[0] += cBM.vel[0];
-            vel[1] += cBM.vel[1];
-            vel[2] += cBM.vel[2];
-        }
         */
+
         t0 = Time.time;
+        minZ = bO.R;
 
         // init trajectory and line drawing setting
         if(trajEnable){
@@ -171,12 +207,15 @@ public class BodyMotion : MonoBehaviour
             line = gameObject.GetComponent<LineRenderer>();
             line.material = new Material(Shader.Find("Sprites/Default"));
             line.positionCount = 0;
-            line.startWidth = (float)(dS.scaleD * bP.D * 1.05);
+            line.startWidth = (float)(dS.scaleD * bP.D * 1.05); // self 1.05 times;
+            //line.startWidth = (float)(cBM.bP.D * dS.scaleD * 0.1); // 1/10 of central body size;
             line.endWidth = 0.01f;
             line.startColor = Color.red;
             line.endColor = Color.red;
             line.useWorldSpace = true;
         }
+
+        Debug.Log(this.name + " size=" + tF.localScale + " pos=" + tF.position);
     }
 
 
@@ -195,7 +234,8 @@ public class BodyMotion : MonoBehaviour
             for(int i = 0; i < moveCount; i++) MoveOnce(dS.dt);
             if(tailDt > 0) MoveOnce(tailDt);
             SetPosition();
-            
+            if(orbitKeep) AdjustOrbit();
+
             // add new trajectory if satisfy condition and draw current trajectory array
             if(trajEnable){
                 double dist = Math.Sqrt(Math.Pow(pos[0] - traj[lastTrajIndex][0], 2.0) + 
